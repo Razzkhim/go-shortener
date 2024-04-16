@@ -7,7 +7,7 @@ import (
 type Handler struct{}
 
 func (h Handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	data := []byte("Hello!")
+	data := []byte("As!")
 	res.Write(data)
 }
 
