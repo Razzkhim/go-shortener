@@ -1,22 +1,29 @@
 package main
 
-import (
-	"net/http"
-)
+import "net/http"
 
-type Handler struct{}
+//type Handler struct{}
+//
+//func (Handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+//	data := []byte("hi")
+//	res.Write(data)
+//}
 
-func (h Handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	data := []byte("As!")
-	res.Write(data)
+func mainPage(res http.ResponseWriter, req *http.Request) {
+	res.Write([]byte("Hello"))
+}
+
+func apiPage(res http.ResponseWriter, req *http.Request) {
+	res.Write([]byte("APIIIIIIIIIII"))
 }
 
 func main() {
-	var h Handler
+	mux := http.NewServeMux()
+	mux.HandleFunc(`/asdsa`, apiPage)
+	mux.HandleFunc(`/`, mainPage)
 
-	err := http.ListenAndServe(`:8080`, h)
+	err := http.ListenAndServe(`:8080`, mux)
 	if err != nil {
 		panic(err)
 	}
-
 }
