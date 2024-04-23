@@ -1,59 +1,44 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
 )
 
-func mainPage(res http.ResponseWriter, req *http.Request) {
-	body := fmt.Sprintf("Method: %s\r\n", req.Method)
-	body += "Header ===============\r\n"
-	for k, v := range req.Header {
-		body += fmt.Sprintf("%s: %v\r\n", k, v)
-	}
-	body += "Query parameters ===============\r\n"
+const form = `<html>
+    <head>
+    <title></title>
+    </head>
+    <body>
+        <form action="/" method="post">
+            <label>Логин <input type="text" name="login"></label>
+            <label>Пароль <input type="password" name="password"></label>
+            <input type="submit" value="Login">
+        </form>
+    </body>
+</html>`
 
-	if err := req.ParseForm(); err != nil {
-		res.Write([]byte(err.Error()))
-		return
-	}
-
-	for k, v := range req.Form {
-		body += fmt.Sprintf("%s: %v\r\n", k, v)
-	}
-	res.Write([]byte(body))
+func Auth(login, password string) bool {
+	return login == `guest` && password == `demo`
 }
 
-type Subj struct {
-	Product string `json:"name"`
-	Price   int    `json:"price"`
-}
-
-func JSONHandler(w http.ResponseWriter, req *http.Request) {
-	// собираем данные
-	subj := Subj{"Milk", 50}
-	// кодируем в JSON
-	resp, err := json.Marshal(subj)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+func mainPage(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		login := r.FormValue("login")
+		password := r.FormValue("password")
+		if Auth(login, password) {
+			io.WriteString(w, "Добро пожаловать!")
+		} else {
+			http.Error(w, "Неверный логин или пароль", http.StatusUnauthorized)
+		}
 		return
+	} else {
+		io.WriteString(w, form)
 	}
-	// устанавливаем заголовок Content-Type
-	// для передачи клиенту информации, кодированной в JSON
-	w.Header().Set("content-type", "application/json")
-	// устанавливаем код 200
-	w.WriteHeader(http.StatusOK)
-	// пишем тело ответа
-	w.Write(resp)
 }
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, mainPage)
-	mux.HandleFunc(`/hi`, JSONHandler)
-
-	err := http.ListenAndServe(`:8080`, mux)
+	err := http.ListenAndServe(`:8080`, http.HandlerFunc(mainPage))
 	if err != nil {
 		panic(err)
 	}
